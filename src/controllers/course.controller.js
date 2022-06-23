@@ -10,7 +10,7 @@ async  getCourses(req,res){
 try{
     const studentId = req.params.studentid;
     console.log(studentId);
-    const student = await Student.findOne({id : studentId}).populate({path : 'courses'});
+    const student = await Student.findOne({id : studentId}).populate({path : 'courses',select:["id","name","grade"]});
 
     return res.status(200).json({
         studentId: student.id,
@@ -43,9 +43,12 @@ async  createCourse(req,res){
             console.log("user not found")
             return res.status(400).json({ error: { message: "Bad request" } });
         }
-        if(user.courses[0]==id){
+        //checking the name is not repeated}
+        const foundedCourse = await Course.findOne({ $or: [{ name: name   },{id : id} ]});
+        if (foundedCourse)
+        {
+            console.log("name or id repeated")
             return res.status(400).json({ error: { message: "Bad request" } });
-
         }
 
         const createdCourse = new Course({ name: name, grade: grade, id: id });
@@ -74,6 +77,7 @@ async  updateCourse(req,res){
         const studentId = req.params.studentid; 
         const courseId = req.params.courseid; 
         const { name, id, grade } = req.body;
+
         const stu = await Student.findOne({ id: studentId }).populate({path : 'courses'});;
     
         if(!(studentId && courseId)){
@@ -88,8 +92,15 @@ async  updateCourse(req,res){
         }
         
         const updateCourse = await Course.findOne({ id: courseId })
+        if (!updateCourse)
+        {
+            
+            console.log("course not found");
+            return res.status(400).json({ error: { message: "Bad Request" } });
+        }
         const PrvGrade = updateCourse.grade;
-        courses =stu.courses
+        console.log(stu.courses)
+       const courses =stu.courses
        const isOwner= courses.map(item => 
         {
            if (item.id == courseId)
@@ -106,10 +117,23 @@ async  updateCourse(req,res){
         stu.average = ((stu.average * courses.length) - PrvGrade + grade) / courses.length;
 
         await stu.save();
-
-        updateCourse.id =  id; 
+        updateCourse.id =  updateCourse.id; 
+        updateCourse.grade =  updateCourse.grade; 
+        updateCourse.name =  updateCourse.name; 
+        if (name)
+        {
+            updateCourse.name =  name; 
+        }
+        if (id)
+        {
+            updateCourse.id =  id; 
+        }
+        if (!grade)
+        {
+            console.log("grade is empty");
+            return res.status(400).json({ error: { message: "Bad Request" } });
+        }
         updateCourse.grade =  grade; 
-        updateCourse.name =  name; 
         await updateCourse.save();
 
         return res.status(200).json({
@@ -153,8 +177,10 @@ async  deleteCourse(req,res){
                     return res.status(400).json({ error: { message: "Bad Request" } });
                 }
                 const foundUser = await Student.findOne({ id: studentId });
-                foundUser.average = (foundUser.average * foundUser.courses.length) - docs.grade / (foundUser.courses.length - 1);
-                
+                console.log(foundUser.courses.length)
+                console.log( docs.grade )
+                foundUser.average = ((foundUser.average * foundUser.courses.length) - docs.grade) / (foundUser.courses.length - 1);
+              await  foundUser.save();
                 await Student.findOneAndUpdate({ id: studentId }, {
                     $pull : {
                         courses :docs._id
