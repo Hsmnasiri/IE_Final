@@ -14,19 +14,19 @@ const options = {
 
 app.use(bodyParser.json(options));
 
-mongoose.connect('mongodb://localhost:27017/courseManager',
+mongoose.connect('mongodb://localhost:27017/course',
     { useNewUrlParser: true, useUnifiedTopology: true });
  mongoose.set('useFindAndModify', false);
                            
 const db=mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
- console.log("database connection is  Ok!");
+ console.log("database is  connected!");
 });
 
 app.use('/', require('./src/routes/router'));
 
 
-app.listen(3000, ()=>{
-    console.log("server is running ");
+app.listen(8080, ()=>{
+    console.log("server is running on port 8080 ");
 });

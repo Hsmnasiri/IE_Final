@@ -6,9 +6,9 @@ const studentController =  require('../controllers/student.controller');
 
 //validators
 
-router.get("/",  studentController.getStudents );
-router.post( "/",  studentController.createStudent );
-router.put("/:studentid", studentController.updateStudent );
-router.delete("/:studentid", studentController.deleteStudent );
+router.get("/",  studentController.getAll );
+router.post( "/",  studentController.create );
+router.put("/:studentid", studentController.update );
+router.delete("/:studentid", studentController.delete );
 
 module.exports = router;
