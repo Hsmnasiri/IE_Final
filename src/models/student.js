@@ -5,11 +5,8 @@ const studentSchema = new mongoose.Schema({
     type: Number,
     require:true
   },
-  name: {
-    type: String
-  },
-  average: {type :  Number, default:0 },
-  courses:[{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' ,}],
+  average: {type :  Number, default:0.00 },
+  courses:[{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'last_updated' },

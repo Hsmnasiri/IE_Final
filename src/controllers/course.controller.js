@@ -38,7 +38,11 @@ async  createCourse(req,res){
         }
         const user = await Student.findOne({ id:studentId }).populate({ path: 'courses' });
         console.log("user is : ",user);
-
+        if (!user)
+        {
+            console.log("user not found")
+            return res.status(400).json({ error: { message: "Bad request" } });
+        }
         if(user.courses[0]==id){
             return res.status(400).json({ error: { message: "Bad request" } });
 
@@ -70,7 +74,7 @@ async  updateCourse(req,res){
         const studentId = req.params.studentid; 
         const courseId = req.params.courseid; 
         const { name, id, grade } = req.body;
-        const stu = await Student.findOne({ id: studentId });
+        const stu = await Student.findOne({ id: studentId }).populate({path : 'courses'});;
     
         if(!(studentId && courseId)){
             console.log("fields are empty");
@@ -82,12 +86,36 @@ async  updateCourse(req,res){
             return res.status(400).json({ error: { message: "Bad Request" } });
 
         }
-        const updatedCourse =await Course.findOneAndUpdate({id : courseId}, {name : name , id : id, grade:grade})
+        
+        const updateCourse = await Course.findOne({ id: courseId })
+        const PrvGrade = updateCourse.grade;
+        courses =stu.courses
+       const isOwner= courses.map(item => 
+        {
+           if (item.id == courseId)
+           {
+            return true;
+           }else
+               return false;
+       })
+        if (!isOwner)
+        {
+            console.log("this user is not the Owner of this Course");
+            return res.status(400).json({ error: { message: "Bad Request" } });
+        }
+        stu.average = ((stu.average * courses.length) - PrvGrade + grade) / courses.length;
+
+        await stu.save();
+
+        updateCourse.id =  id; 
+        updateCourse.grade =  grade; 
+        updateCourse.name =  name; 
+        await updateCourse.save();
 
         return res.status(200).json({
-            name: updatedCourse.name,
-            id: updatedCourse.id,
-            grade: updatedCourse.grade,
+            name: updateCourse.name,
+            id: updateCourse.id,
+            grade: updateCourse.grade,
             code: 200,
             message: "grade updated successfully!"
         }); 
@@ -124,8 +152,10 @@ async  deleteCourse(req,res){
                     console.log("Course not found");
                     return res.status(400).json({ error: { message: "Bad Request" } });
                 }
+                const foundUser = await Student.findOne({ id: studentId });
+                foundUser.average = (foundUser.average * foundUser.courses.length) - docs.grade / (foundUser.courses.length - 1);
+                
                 await Student.findOneAndUpdate({ id: studentId }, {
-                    average: docs.average,
                     $pull : {
                         courses :docs._id
                     }

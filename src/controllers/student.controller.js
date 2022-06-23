@@ -1,14 +1,12 @@
-const { update } = require('lodash');
-const _ = require('lodash');
 const Student = require('../models/student')
 let controller = require("./controller");
 
 class StudentController extends controller {
  
-async  getStudents(req,res){
+async getStudents( req,res){
 try{
-   const students = await Student.find({}).populate({path : 'courses', select:["name","id","grade"]});
-   const responses = students.map(item =>
+   const foundedStudents = await Student.find({}).populate({path : 'courses', select:["name","id","grade"]});
+   const students = foundedStudents.map(item =>
     {
         return {
             studentId :item.id,
@@ -19,7 +17,7 @@ try{
    })
     return res.status(200).json({
         size: students.length,
-        responses,
+        students,
         code: 200,
         message: "All students received successfully!"
     });
@@ -32,9 +30,8 @@ async createStudent(req,res){
     try
     {
         console.log("we are in Create student Function");
-        console.log(req.body)
         const { studentId } = req.body;
-        console.log(studentId);
+        console.log( "studentId is :" , studentId);
         if (!(studentId))
         {
            return res.status(400).json({ error: { message: "Bad request" } });
@@ -77,7 +74,7 @@ async  updateStudent(req,res){
         if(!(studentId)){
             return res.status(400).json({ error: { message: "Bad Request" } });
         }
-        const updatedStudent = await Student.findOneAndUpdate({ id :updateStudent },{id : studentId});
+        const updatedStudent = await Student.findOneAndUpdate({ id :updateStudent },{id : studentId}).populate({path : 'courses', select:["name","id","grade"]});
         console.log(updatedStudent);
         if (!updatedStudent)
         {
@@ -114,7 +111,9 @@ async  updateStudent(req,res){
             }
             else{
                 console.log("Deleted User : ", docs);
+                //delete courses that are for this Student
                 
+                //response
                 return res.status(200).json({
                     name: docs.name,
                     id: docs.id,
@@ -123,7 +122,8 @@ async  updateStudent(req,res){
                     message: "student deleted successfully!"
                 }); 
             }
-        });
+     });
+    
     } catch (e)
     {
         console.log(e);
