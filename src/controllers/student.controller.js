@@ -1,4 +1,5 @@
-const _ = require('joi');
+const { update } = require('lodash');
+const _ = require('lodash');
 const Student = require('../models/student')
 let controller = require("./controller");
 
@@ -16,16 +17,38 @@ try{
 }
 
 async  createStudent(req,res){
-    try{
-        const {studentId} = req.body.studentId;
-        if(!_isNumber(studentId)){
-        
-            return res.status(400).json({ error: { message: "Bad Request" } });
+    try
+    {
+        console.log("we are in Create student Function");
+        console.log(req.body)
+        const { studentId } = req.body;
+        console.log(studentId);
+        if (!(studentId))
+        {
+           return res.status(400).json({ error: { message: "Bad request" } });
         }
-      const createdStudent= await Student.create({ Id: 'small' }, function (err, small) {
+        const foundedStudent = await Student.findOne({ id: studentId })
+        if (foundedStudent)
+        {
+            return res.status(400).json({ error: { message: "Bad request" } });
+        }
+        const createdStudent = new Student({ id: studentId }, function (err, small)
+        {
             if (err) return handleError(err);
-          });
-        return res.status(200).json({ createdStudent ,code :200,  message: "All students received successfully!" } );
+        });
+        await createdStudent.save();
+        const student = await Student.findOne({ id: studentId }).select(["id", "average", "courses", "last_updated"]);
+        console.log("the student is : ",student)
+  
+        console.log(student.last_updated);
+        return res.status(200).json({
+            id: student.id,
+            average: student.average,
+            courses: student.courses,
+            last_update:student.last_updated,
+            code: 200,
+            message: "student added successfully!"
+        });
         
     }catch(e){
         console.log(e);
@@ -33,15 +56,27 @@ async  createStudent(req,res){
     }
 }
 async  updateStudent(req,res){
-    try{
-        const {studentId} = req.body.studentId;
-        if(!_isNumber(studentId)){
+    try
+    {
+        const updateStudent = req.params.studentid;
+        const { studentId } = req.body;
         
+        console.log(studentId, "will be replace :", updateStudent);
+        if(!(studentId)){
             return res.status(400).json({ error: { message: "Bad Request" } });
         }
-        const updatedStudent = await Student.findOneAndUpdate(studentId,{_id : studentId});
+        const updatedStudent = await Student.findOneAndUpdate({ id :updateStudent },{id : studentId});
+        console.log(updatedStudent);
+        if (!updatedStudent)
+        {
+            console.log("Not Found")
+            return res.status(400).json({ error: { message: "Bad Request" } });
 
-        return res.status(200).json({ updatedStudent ,code :200,  message: "All students received successfully!" } );
+        }
+        return res.status(200).json({id: updatedStudent.id,
+            average: updatedStudent.average,
+            courses: updatedStudent.courses,
+            last_update:updatedStudent.last_updated ,code :200,  message: "All students received successfully!" } );
 
     }catch(e){
         console.log(e);
@@ -49,15 +84,26 @@ async  updateStudent(req,res){
     }
 }
 
-async  deleteStudent(req,res){
+ async deleteStudent(req, res)
+    {
     try{
-        const {studentId} = req.body.studentId;
-        if(!_isNumber(studentId)){
-        
+        const deleteStudent = req.params.studentid;
+        if(!(deleteStudent)){
+            console.log("Not Found");
             return res.status(400).json({ error: { message: "Bad Request" } });
         }
-        await Student.findByIdAndDelete(studentId);
-    }catch(e){
+
+     await Student.findOneAndDelete({id : deleteStudent }, function (err, docs) {
+            if (err){
+                console.log(err)
+            }
+            else{
+                console.log("Deleted User : ", docs);
+             return res.status(200).json({docs }); 
+            }
+        });
+    } catch (e)
+    {
         console.log(e);
         return res.status(500).json({ error: { message: "Internal Server Error" } });
     }

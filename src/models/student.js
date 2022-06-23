@@ -1,15 +1,18 @@
 const mongoose = require("mongoose");
 
 const studentSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    require: true
+  id: {
+    type: Number,
+    require:true
   },
-  average: Number,
+  name: {
+    type: String
+  },
+  average: {type :  Number, default:0 },
   courses:[{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' ,}],
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: 'created_at', updatedAt: 'last_updated' },
   }
 );
 

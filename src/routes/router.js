@@ -4,8 +4,10 @@ const router = express.Router();
 
 
 
-router.use('/strudents', require('./student.routes'));
- 
+router.use('/students', require('./student.routes'));
+
+router.use('/course', require('./course.routes'));
+
 router.all('*',async(req,res,next)=>{
     res.status(404).json("Page Not Found");
     console.log("error 404!!!! not found");
