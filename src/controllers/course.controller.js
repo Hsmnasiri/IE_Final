@@ -12,7 +12,13 @@ try{
     console.log(studentId);
     const student = await Student.findOne({id : studentId}).populate({path : 'courses'});
 
-    return res.status(500).json({student , code :200,message:"All courses received successfully!"});
+    return res.status(200).json({
+        studentId: student.id,
+        average: student.average,
+        Courses: student.courses,
+        last_updated: student.last_updated,
+        code: 200, message: "All courses received successfully!"
+    });
 
 }catch(e){
     console.log(e);
@@ -40,11 +46,19 @@ async  createCourse(req,res){
 
         const createdCourse = new Course({ name: name, grade: grade, id: id });
         await createdCourse.save();
+        const preAvg = user.average;
         user.courses.push(createdCourse);
+        user.average = (preAvg*(user.courses.length -1)+grade)/user.courses.length
         await user.save();
         console.log(createdCourse);
         
-        return res.status(200).json({createdCourse, code :200,message: "Course created successfully"});
+        return res.status(200).json({
+            name: createdCourse.name,
+            id: createdCourse.id,
+            grade: createdCourse.grade,
+            code: 200,
+            message: "Course created successfully"
+        });
 
     }catch(e){
         console.log(e);
@@ -56,7 +70,27 @@ async  updateCourse(req,res){
         const studentId = req.params.studentid; 
         const courseId = req.params.courseid; 
         const { name, id, grade } = req.body;
+        const stu = await Student.findOne({ id: studentId });
+    
+        if(!(studentId && courseId)){
+            console.log("fields are empty");
+            return res.status(400).json({ error: { message: "Bad Request" } });
+        }   
+        if (!stu)
+        {
+            console.log("student not found");
+            return res.status(400).json({ error: { message: "Bad Request" } });
 
+        }
+        const updatedCourse =await Course.findOneAndUpdate({id : courseId}, {name : name , id : id, grade:grade})
+
+        return res.status(200).json({
+            name: updatedCourse.name,
+            id: updatedCourse.id,
+            grade: updatedCourse.grade,
+            code: 200,
+            message: "grade updated successfully!"
+        }); 
     }catch(e){
         console.log(e);
         return res.status(500).json({ error: { message: "Internal Server Error" } });
@@ -85,11 +119,26 @@ async  deleteCourse(req,res){
             }
             else{
                 console.log("Deleted Course is  : ", docs);
-              await  Student.findOneAndUpdate({ id: studentId }, {
+                if (!docs)
+                {
+                    console.log("Course not found");
+                    return res.status(400).json({ error: { message: "Bad Request" } });
+                }
+                await Student.findOneAndUpdate({ id: studentId }, {
+                    average: docs.average,
                     $pull : {
                         courses :docs._id
-                }})
-                return res.status(200).json({docs }); 
+                    }
+                })
+                
+                
+                return res.status(200).json({
+                    name: docs.name,
+                    id: docs.id,
+                    grade: docs.grade,
+                    code: 200,
+                    message: "course deleted successfully!"
+                }); 
             }
         });
     }catch(e){

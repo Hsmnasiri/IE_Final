@@ -7,16 +7,28 @@ class StudentController extends controller {
  
 async  getStudents(req,res){
 try{
-   const students = await Student.find({}); 
-
-   return res.status(200).json({ students ,code :200,  message: "All students received successfully!" } );
+   const students = await Student.find({}).populate({path : 'courses', select:["name","id","grade"]});
+   const responses = students.map(item =>
+    {
+        return {
+            studentId :item.id,
+            average :item.average,
+            Courses : item.courses,
+            last_updated: item.last_updated
+        }                
+   })
+    return res.status(200).json({
+        size: students.length,
+        responses,
+        code: 200,
+        message: "All students received successfully!"
+    });
 }catch(e){
     console.log(e);
     return res.status(500).json({ error: { message: "Internal Server Error" } });
 }
 }
-
-async  createStudent(req,res){
+async createStudent(req,res){
     try
     {
         console.log("we are in Create student Function");
@@ -76,7 +88,10 @@ async  updateStudent(req,res){
         return res.status(200).json({id: updatedStudent.id,
             average: updatedStudent.average,
             courses: updatedStudent.courses,
-            last_update:updatedStudent.last_updated ,code :200,  message: "All students received successfully!" } );
+            last_update: updatedStudent.last_updated,
+            code: 200,
+            message: "All students received successfully!"
+        });
 
     }catch(e){
         console.log(e);
@@ -99,7 +114,14 @@ async  updateStudent(req,res){
             }
             else{
                 console.log("Deleted User : ", docs);
-             return res.status(200).json({docs }); 
+                
+                return res.status(200).json({
+                    name: docs.name,
+                    id: docs.id,
+                    grade: docs.grade,
+                    code: 200,
+                    message: "student deleted successfully!"
+                }); 
             }
         });
     } catch (e)
